@@ -7,11 +7,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.            #
 #######################################################################
 
-import six
 from extend_me import ExtensibleByHashType
-from pkg_resources import parse_version
 
-from ..utils import (AttrDict,
+from ..utils import (parse_version,
+                     AttrDict,
                      DirMixIn,
                      preprocess_args,
                      stdcall)
@@ -39,8 +38,7 @@ def get_object(client, name):
 
 # TODO: implement clean caches new columns may be defined, when new addon was
 # installed
-@six.python_2_unicode_compatible
-class Object(six.with_metaclass(ObjectType, DirMixIn)):
+class Object(DirMixIn, metaclass=ObjectType):
     """ Base class for all Objects
 
         Provides simple interface to remote osv.osv objects::

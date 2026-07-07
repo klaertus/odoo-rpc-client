@@ -8,7 +8,6 @@
 #######################################################################
 
 # Python imports
-import six
 import extend_me
 
 from .utils import DirMixIn
@@ -16,8 +15,7 @@ from .utils import DirMixIn
 PluginMeta = extend_me.ExtensibleByHashType._('Plugin', hashattr='name')
 
 
-@six.python_2_unicode_compatible
-class Plugin(six.with_metaclass(PluginMeta)):
+class Plugin(metaclass=PluginMeta):
     """ Base class for all plugins, extensible by name
 
         (uses metaclass extend_me.ExtensibleByHashType)
@@ -75,7 +73,6 @@ class TestPlugin(Plugin):
         return self.client.get_url()
 
 
-@six.python_2_unicode_compatible
 class PluginManager(extend_me.Extensible, DirMixIn):
     """ Class that holds information about all plugins
 

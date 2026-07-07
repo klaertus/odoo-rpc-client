@@ -9,9 +9,8 @@
 
 import os
 import os.path
-from pkg_resources import parse_version as V
+from odoo_rpc_client.utils import parse_version as V
 
-import six
 import unittest
 
 from . import BaseTestCase
@@ -80,9 +79,9 @@ class Test_Service_Report(BaseTestCase):
 
         self.assertIsInstance(result, ReportResult)
         self.assertTrue(result.state)
-        self.assertIsInstance(result.result, six.binary_type)
+        self.assertIsInstance(result.result, bytes)
         self.assertEqual(result.format, 'pdf')
-        self.assertIsInstance(result.content, six.binary_type)
+        self.assertIsInstance(result.content, bytes)
 
         # save to default path
         self.assertFalse(os.path.exists(result.path))

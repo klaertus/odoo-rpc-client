@@ -16,7 +16,6 @@ import os
 import os.path
 import unittest
 import time
-import six
 
 
 @unittest.skipUnless(os.environ.get('TEST_DB_SERVICE', False),
@@ -44,11 +43,11 @@ class Test_999_DB(BaseTestCase):
 
         res = to_dbname(self.env.dbname)
         self.assertEqual(res, self.env.dbname)
-        self.assertIsInstance(res, six.string_types)
+        self.assertIsInstance(res, str)
 
         res = to_dbname(cl_db)
         self.assertEqual(res, self.env.dbname)
-        self.assertIsInstance(res, six.string_types)
+        self.assertIsInstance(res, str)
 
         # Test that value error is raise when unexpected value passed to
         # function
@@ -59,7 +58,7 @@ class Test_999_DB(BaseTestCase):
         # dump db
         dump_data = self.client.services.db.dump_db(self.env.super_password,
                                                     self.env.dbname)
-        self.assertIsInstance(dump_data, six.binary_type)
+        self.assertIsInstance(dump_data, bytes)
 
         # drop it
         self.client.services.db.drop_db(self.env.super_password,

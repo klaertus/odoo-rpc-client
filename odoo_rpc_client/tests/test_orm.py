@@ -7,14 +7,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.            #
 #######################################################################
 
-import six
 import numbers
 import collections
 import unittest
 
-from pkg_resources import parse_version as V
+from odoo_rpc_client.utils import parse_version as V
 
-from six.moves import collections_abc
+import collections.abc as collections_abc
 
 from . import (BaseTestCase,
                mock)
@@ -204,7 +203,7 @@ class Test_20_Object(BaseTestCase):
     def test_create_write_unlink(self):
         new_partner_id = self.object.create({'name': 'New Partner'})
 
-        self.assertIsInstance(new_partner_id, six.integer_types)
+        self.assertIsInstance(new_partner_id, int)
 
         self.object.write([new_partner_id], {'name': 'New Partner Name'})
 
@@ -618,7 +617,7 @@ class Test_22_RecordList(BaseTestCase):
     def test_mapped_1_simple_field(self):
         res = self.recordlist.mapped('name')
         self.assertIsInstance(res, list)
-        self.assertIsInstance(res[0], six.string_types)
+        self.assertIsInstance(res[0], str)
         self.assertEqual(len(res), len(set(p.name for p in self.recordlist)))
 
     def test_mapped_2_m2o_field(self):
@@ -635,7 +634,7 @@ class Test_22_RecordList(BaseTestCase):
         res = self.recordlist.mapped('parent_id.name')
         self.assertIsInstance(res, list)
         self.assertGreaterEqual(len(res), 1)
-        self.assertIsInstance(res[0], six.string_types)
+        self.assertIsInstance(res[0], str)
 
         # TODO: rewrite this to test that items was uniquifyed
         self.assertEqual(
@@ -647,7 +646,7 @@ class Test_22_RecordList(BaseTestCase):
         res = self.recordlist.mapped('country_id.code')
         self.assertIsInstance(res, list)
         self.assertGreaterEqual(len(res), 1)
-        self.assertIsInstance(res[0], six.string_types)
+        self.assertIsInstance(res[0], str)
 
         # TODO: rewrite this to test that items was uniquifyed
         self.assertEqual(

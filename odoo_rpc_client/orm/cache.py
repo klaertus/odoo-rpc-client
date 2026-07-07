@@ -7,7 +7,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.            #
 #######################################################################
 
-import six
 import collections
 
 __all__ = ('empty_cache', 'Cache', 'ObjectCache')
@@ -50,7 +49,7 @@ class ObjectCache(dict):
             self.update({cid: {'id': cid} for cid in keys})
         else:
             self.update({cid: {'id': cid}
-                         for cid in set(keys).difference(six.viewkeys(self))})
+                         for cid in set(keys).difference(self.keys())})
         return self
 
     def update_context(self, new_context):
@@ -79,7 +78,7 @@ class ObjectCache(dict):
             and find those that have no at least one field in cache.
             This is highly useful in prefetching
         """
-        return [key for key, val in six.viewitems(self)
+        return [key for key, val in self.items()
                 if any(((field not in val) for field in fields))]
 
     def cache_field(self, rid, ftype, field_name, value):
@@ -96,7 +95,7 @@ class ObjectCache(dict):
             rcache = self._root_cache[self._object.
                                       columns_info[field_name]['relation']]
 
-            if isinstance(value, six.integer_types):  # pragma: no cover
+            if isinstance(value, int):  # pragma: no cover
                 # internal dict {'id': key} will be created by default
                 # (see ObjectCache.__missing__)
                 rcache[value]

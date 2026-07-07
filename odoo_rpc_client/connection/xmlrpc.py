@@ -8,9 +8,8 @@
 #######################################################################
 
 # python imports
-import six
-from six.moves import xmlrpc_client as xmlrpclib
-from six.moves import http_client as httplib
+import xmlrpc.client as xmlrpclib
+import http.client as httplib
 
 # project imports
 from .connection import ConnectorBase, DEFAULT_TIMEOUT
@@ -59,7 +58,7 @@ class XMLRPCMethod(object):
         return res
 
 
-if six.PY2:
+if False:
     class _XMLRPCTransport(xmlrpclib.Transport):
         def __init__(self, timeout=DEFAULT_TIMEOUT,
                      ssl=False, *args, **kwargs):
@@ -85,7 +84,7 @@ if six.PY2:
                 self._connection = host, httplib.HTTPConnection(
                     chost, timeout=self.timeout)
             return self._connection[1]
-elif six.PY3:
+elif True:
     class _XMLRPCTransport(xmlrpclib.Transport):
         def __init__(self, timeout=DEFAULT_TIMEOUT,
                      ssl=False, *args, **kwargs):

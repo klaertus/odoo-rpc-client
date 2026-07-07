@@ -64,10 +64,9 @@ Ability to use Record class as analog to browse_record:
     ... 'assigned'
 """
 
-import six
 import re
 from extend_me import Extensible
-from pkg_resources import parse_version
+from .utils import parse_version
 
 # project imports
 from .connection import get_connector, DEFAULT_TIMEOUT
@@ -88,7 +87,6 @@ RE_CLIENT_URL = re.compile(
     r"(?P<dbname>[\w\-.]+)?$")
 
 
-@six.python_2_unicode_compatible
 class Client(Extensible):
     """
        A simple class to connect to Odoo instance via RPC (XML-RPC, JSON-RPC)

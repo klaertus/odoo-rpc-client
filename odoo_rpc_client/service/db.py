@@ -7,10 +7,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.            #
 #######################################################################
 
-import six
 import re
-from pkg_resources import parse_version
-
+from ..utils import parse_version
 from ..service.service import ServiceBase
 
 __all__ = ('DBService',)
@@ -26,7 +24,7 @@ def to_dbname(db):
         :raises ValueError: value of db is not parsable
     """
     from odoo_rpc_client.client import Client
-    if isinstance(db, six.string_types):
+    if isinstance(db, str):
         return db
     elif isinstance(db, Client) and db.dbname is not None:
         return db.dbname
@@ -115,7 +113,7 @@ class DBService(ServiceBase):
         dump_data = self.dump(password, to_dbname(db), *args)
 
         # Ensure returned data is not unicode, but bytes
-        if isinstance(dump_data, six.text_type):
+        if isinstance(dump_data, str):
             dump_data = dump_data.encode('utf-8')
 
         return dump_data
@@ -145,7 +143,7 @@ class DBService(ServiceBase):
 
         # data passed to restore should be Unicode, otherwise it dumps it as
         # binary data on python3
-        if six.PY3 and isinstance(data, six.binary_type):
+        if True and isinstance(data, bytes):
             data = data.decode()
 
         return self.restore(password, dbname, data, *args)

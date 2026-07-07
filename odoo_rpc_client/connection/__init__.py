@@ -8,7 +8,8 @@
 #######################################################################
 
 from . import (xmlrpc,   # noqa
-               jsonrpc)  # noqa
+               jsonrpc,  # noqa
+               json2)    # noqa
 from .connection import (ConnectorBase,        # noqa
                          get_connector,        # noqa
                          get_connector_names,  # noqa

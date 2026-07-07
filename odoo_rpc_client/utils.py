@@ -7,14 +7,17 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.            #
 #######################################################################
 
-import six
+import re
 import functools
+
+from packaging.version import parse as _parse_version, InvalidVersion
 
 __all__ = ('ustr',
            'AttrDict',
            'DirMixIn',
            'UConverter',
            'wpartial',
+           'parse_version',
            )
 
 # Check if anyfield is installed
@@ -24,6 +27,33 @@ try:
 except ImportError:
     def normalizeSField(fn):
         return fn
+
+
+def parse_version(version_string):
+    """ Parse a version string into a comparable object.
+
+        Replacement for the removed ``pkg_resources.parse_version`` that is
+        tolerant of the non `PEP 440`_ version strings Odoo may report, such
+        as ``saas~17.2`` or ``saas~16.3+e``.
+
+        :param version_string: version to parse (e.g. ``'17.0'``)
+        :return: parsed version, comparable with other parsed versions
+        :rtype: packaging.version.Version
+
+        .. _PEP 440: https://peps.python.org/pep-0440/
+    """
+    try:
+        return _parse_version(version_string)
+    except (InvalidVersion, TypeError):
+        # Odoo online/SaaS builds report versions like 'saas~17.2' which are
+        # not valid PEP 440. Strip the 'saas~' marker and retry.
+        cleaned = re.sub(r'^saas[~-]?', '', str(version_string))
+        try:
+            return _parse_version(cleaned)
+        except InvalidVersion:
+            # Last resort: keep only the leading dotted-numeric part.
+            match = re.match(r'\d+(?:\.\d+)*', cleaned)
+            return _parse_version(match.group(0) if match else '0')
 
 
 def wpartial(func, *args, **kwargs):
@@ -91,29 +121,29 @@ class UConverter(object):
         :raise: UnicodeError if value cannot be coerced to unicode
         :return: unicode string representing the given value
         """
-        # it is unicode
-        if isinstance(value, six.text_type):
+        # it is already a (unicode) string
+        if isinstance(value, str):
             return value
 
-        # it is not binary type (str for python2 and bytes for python3)
-        if not isinstance(value, six.binary_type):
+        # it is not bytes: try a direct conversion to str
+        if not isinstance(value, bytes):
             try:
-                value = six.text_type(value)
+                value = str(value)
             except Exception:
-                # Cannot directly convert to unicode. So let's try to convert
-                # to binary, and that try diferent encoding to it
+                # Cannot directly convert to str. So let's try to convert
+                # to bytes, and then try diferent encoding to it
                 try:
-                    value = six.binary_type(value)
+                    value = bytes(value)
                 except Exception:
                     raise UnicodeError('unable to convert to unicode %r'
                                        '' % (value,))
             else:
                 return value
 
-        # value is binary type (str for python2 and bytes for python3)
+        # value is bytes: decode using the configured encodings
         for ln in self.encodings:
             try:
-                res = six.text_type(value, ln)
+                res = str(value, ln)
             except Exception:
                 pass
             else:
@@ -126,52 +156,11 @@ class UConverter(object):
 ustr = UConverter()
 
 
-# DirMixIn class implementation. To be able to use super calls to __dir__ in
-# subclasses (Py 2/3 support)
-# code is based on
-# http://www.quora.com/How-dir-is-implemented-Is-there-any-PEP-related-to-that
-try:
-    object.__dir__
-except AttributeError:
-    class DirMixIn(object):
-        """ Mix-in to make implementing __dir__ method in subclasses simpler
-        """
-        def __dir__(self):
-            def get_attrs(obj):
-                import types
-                if not hasattr(obj, '__dict__'):
-                    return []  # slots only
-                if not isinstance(obj.__dict__, (dict, types.DictProxyType)):
-                    raise TypeError("%s.__dict__ is not a dictionary"
-                                    "" % obj.__name__)
-                return obj.__dict__.keys()
-
-            def dir2(obj):
-                attrs = set()
-                if not hasattr(obj, '__bases__'):
-                    # obj is an instance
-                    if not hasattr(obj, '__class__'):
-                        # slots
-                        return sorted(get_attrs(obj))
-                    klass = obj.__class__
-                    attrs.update(get_attrs(klass))
-                else:
-                    # obj is a class
-                    klass = obj
-
-                for cls in klass.__bases__:
-                    attrs.update(get_attrs(cls))
-                    attrs.update(dir2(cls))
-                attrs.update(get_attrs(obj))
-                return list(attrs)
-
-            return dir2(self)
-else:
-    # There are no need to implement any aditional logic for Python 3.3+,
-    # because there base class 'object' already have implemented
-    # '__dir__' method, which could be accessed via super() by subclasses
-    class DirMixIn:
-        pass
+# DirMixIn is kept as an (empty) mix-in for backward compatibility: on
+# Python 3 the base ``object`` already implements ``__dir__`` which can be
+# accessed via ``super()`` by subclasses, so no extra logic is needed.
+class DirMixIn:
+    pass
 
 
 class AttrDict(dict, DirMixIn):

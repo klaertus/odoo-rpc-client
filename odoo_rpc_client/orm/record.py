@@ -9,14 +9,13 @@
 
 """ This module contains classes and logic to handle operations on records
 """
-import six
 import abc
 import numbers
 import functools
 import collections
 from extend_me import (ExtensibleType,
                        ExtensibleByHashType)
-from six.moves import collections_abc
+import collections.abc as collections_abc
 
 
 from ..utils import (wpartial,
@@ -61,8 +60,7 @@ def get_record(obj, rid, cache=None, context=None):
     return cls(obj, rid, cache=cache, context=context)
 
 
-@six.python_2_unicode_compatible
-class Record(six.with_metaclass(RecordMeta, DirMixIn)):
+class Record(DirMixIn, metaclass=RecordMeta):
     """ Base class for all Records
 
         Do not use it to create record instances manualy.
@@ -458,10 +456,7 @@ def get_record_list(obj, ids=None, fields=None, cache=None, context=None):
 
 # TODO: implement correct bechavior of cache when adding new records to record
 # list with diferent cache
-@six.python_2_unicode_compatible
-class RecordList(six.with_metaclass(RecordListMeta,
-                                    collections_abc.MutableSequence,
-                                    DirMixIn)):
+class RecordList(collections_abc.MutableSequence, DirMixIn, metaclass=RecordListMeta):
     """Class to hold list of records with some extra functionality
 
         :param obj: instance of Object to make this list related to
@@ -718,7 +713,7 @@ class RecordList(six.with_metaclass(RecordListMeta,
                                      cache=self._cache)
         res = collections.defaultdict(cls_init)
         for record in self.records:
-            if isinstance(grouper, six.string_types):
+            if isinstance(grouper, str):
                 key = record[grouper]
             elif callable(grouper):
                 key = grouper(record)
@@ -951,7 +946,7 @@ class ObjectRecords(Object):
 
             :type: list of strings
         """
-        return [f for f, d in six.iteritems(self.columns_info)
+        return [f for f, d in self.columns_info.items()
                 if d['type'] != 'binary' and not d.get('function', False)]
 
     def search_records(self, *args, **kwargs):

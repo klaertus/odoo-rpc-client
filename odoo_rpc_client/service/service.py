@@ -7,7 +7,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.            #
 #######################################################################
 
-import six
 from extend_me import (ExtensibleByHashType,
                        Extensible)
 
@@ -17,7 +16,6 @@ from ..utils import DirMixIn
 __all__ = ('get_service_class', 'ServiceBase', 'ServiceManager')
 
 
-@six.python_2_unicode_compatible
 class ServiceManager(Extensible, DirMixIn):
     """ Class to hold services related to specific client and to
         automaticaly clean service cached on update of service classes
@@ -155,8 +153,7 @@ def get_service_class(name):
     return ServiceType.get_class(name, default=True)
 
 
-@six.python_2_unicode_compatible
-class ServiceBase(six.with_metaclass(ServiceType, object)):
+class ServiceBase(object, metaclass=ServiceType):
     """ Base class for all Services
 
         :param service: instance of original service class.

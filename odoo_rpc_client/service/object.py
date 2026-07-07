@@ -7,8 +7,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.            #
 #######################################################################
 
-from pkg_resources import parse_version
-
+from ..utils import parse_version
 from ..service.service import ServiceBase
 
 

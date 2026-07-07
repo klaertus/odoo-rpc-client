@@ -8,8 +8,8 @@
 #######################################################################
 
 import unittest
-import pkg_resources
-from pkg_resources import parse_version as V
+from packaging.version import Version
+from odoo_rpc_client.utils import parse_version as V
 
 from . import BaseTestCase
 from ..client import Client
@@ -18,8 +18,7 @@ from ..orm.record import Record
 from ..service.service import ServiceManager
 from ..plugin import Plugin
 
-VERSION_CLASSES = (pkg_resources.packaging.version.LegacyVersion,
-                   pkg_resources.packaging.version.Version)
+VERSION_CLASSES = (Version,)
 
 
 class Test_10_Client(BaseTestCase):
@@ -183,7 +182,7 @@ class Test_10_Client(BaseTestCase):
             self.client.services._private_service
 
     def test_180_execute_lt_v10(self):
-        if self.client.server_version >= pkg_resources.parse_version('10.0'):
+        if self.client.server_version >= parse_version('10.0'):
             raise unittest.SkipTest('Not applicable to Odoo 10.0')
 
         res = self.client.execute('res.partner', 'read', 1)
@@ -197,7 +196,7 @@ class Test_10_Client(BaseTestCase):
         self.assertEqual(res[0]['id'], 1)
 
     def test_181_execute_gte_v10(self):
-        if self.client.server_version < pkg_resources.parse_version('10.0'):
+        if self.client.server_version < parse_version('10.0'):
             raise unittest.SkipTest(
                 'Not applicable to Odoo version less then 10.0')
 

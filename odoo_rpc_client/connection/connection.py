@@ -7,7 +7,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.            #
 #######################################################################
 
-import six
 from extend_me import ExtensibleByHashType
 
 DEFAULT_TIMEOUT = None
@@ -29,7 +28,7 @@ def get_connector_names():
     return ConnectorType.get_registered_names()
 
 
-class ConnectorBase(six.with_metaclass(ConnectorType)):
+class ConnectorBase(metaclass=ConnectorType):
     """ Base class for all connectors
 
         :param str host: hostname to connect to

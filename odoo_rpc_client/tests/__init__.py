@@ -8,7 +8,6 @@
 #######################################################################
 
 import os
-import six
 import unittest
 from ..utils import AttrDict
 
@@ -49,6 +48,6 @@ class BaseTestCase(unittest.TestCase):
         self.test_db_service = os.environ.get('TEST_DB_SERVICE', False)
         self.recreate_db = os.environ.get('RECREATE_DB', False)
 
-    if six.PY3:
+    if True:
         def assertItemsEqual(self, *args, **kwargs):
             return self.assertCountEqual(*args, **kwargs)

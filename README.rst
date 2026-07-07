@@ -160,6 +160,30 @@ So here is a way to create connection
 
 And next all there same, no more differences betwen shell and lib usage.
 
+By default the ``xml-rpc`` protocol is used. Available protocols (see
+``odoo_rpc_client.connection.get_connector_names()``) are ``xml-rpc``,
+``xml-rpcs``, ``json-rpc``, ``json-rpcs`` and ``json-2``.
+
+For Odoo 17.0+ you may use the **External JSON-2 API** (``/json/2`` endpoint),
+which authenticates with an **API key** instead of a password:
+
+.. code:: python
+
+    from odoo_rpc_client import Client
+    db = Client(host='mycompany.odoo.com',
+                dbname='mycompany',
+                # user/pwd only satisfy the login guard; the API key below
+                # is what actually authenticates every request.
+                user='apikey', pwd='<api-key>',
+                protocol='json-2',
+                port=443,
+                api_key='<api-key>',
+                database='mycompany')  # sent as the X-Odoo-Database header
+
+Only the transport changes: ``Record``/``RecordList``, lazy relational access
+and every model method keep working exactly as with the other connectors.
+See ``odoo_rpc_client/connection/json2.py`` for all supported options.
+
 
 General usage
 ~~~~~~~~~~~~~

@@ -14,7 +14,6 @@ from ..plugin import Plugin
 from ..orm.record import (Record,
                           RecordList)
 
-import six
 
 
 class ExternalIDS(Plugin):
@@ -60,7 +59,7 @@ class ExternalIDS(Plugin):
             model, res_id = val
             domain += [('model', '=', model),
                        ('res_id', '=', res_id)]
-        elif isinstance(val, six.string_types):
+        elif isinstance(val, str):
             if module is None:
                 try:
                     module, name = val.split('.')
@@ -107,7 +106,7 @@ class ExternalIDS(Plugin):
             :return: Record for *val* or False if not found
             :raises ValueError: if *xml_id* argument could not be parsed
         """
-        assert isinstance(xml_id, six.string_types), "xml_id must be string"
+        assert isinstance(xml_id, str), "xml_id must be string"
         e_record = self.get_for(xml_id, module=module)
         if e_record:
             e_record = e_record[0]
