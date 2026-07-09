@@ -7,7 +7,9 @@ Release 1.3.0
 - Added the ``json-2`` connector for the Odoo 17.0+ **External JSON-2 API**
   (``POST /json/2/<model>/<method>``) with **API-key** (bearer) authentication.
   Verified against a live Odoo 19.0 instance (read, nested/relational access,
-  create/write/unlink). Enable it with ``protocol='json-2'``.
+  create/write/unlink). Enable it with ``protocol='json-2'`` and pass the API
+  key as the usual ``pwd`` argument (the database is taken from ``dbname``), so
+  no code besides the protocol needs to change to switch a client over.
 - Modernised for recent Python (tested on 3.12): removed the ``six`` / Python 2
   compatibility shims and the deprecated ``pkg_resources`` dependency
   (``pkg_resources.parse_version`` is now replaced by an Odoo-tolerant

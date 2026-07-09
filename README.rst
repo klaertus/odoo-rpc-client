@@ -165,20 +165,19 @@ By default the ``xml-rpc`` protocol is used. Available protocols (see
 ``xml-rpcs``, ``json-rpc``, ``json-rpcs`` and ``json-2``.
 
 For Odoo 17.0+ you may use the **External JSON-2 API** (``/json/2`` endpoint),
-which authenticates with an **API key** instead of a password:
+which authenticates with an **API key** instead of a password. The ``Client``
+arguments are the same as for any other connector -- just pass the API key as
+``pwd`` and select the ``json-2`` protocol:
 
 .. code:: python
 
     from odoo_rpc_client import Client
     db = Client(host='mycompany.odoo.com',
-                dbname='mycompany',
-                # user/pwd only satisfy the login guard; the API key below
-                # is what actually authenticates every request.
-                user='apikey', pwd='<api-key>',
+                dbname='mycompany',   # sent as the X-Odoo-Database header
+                user='automation',    # only satisfies the login guard (ignored)
+                pwd='<api-key>',      # the API key (bearer token)
                 protocol='json-2',
-                port=443,
-                api_key='<api-key>',
-                database='mycompany')  # sent as the X-Odoo-Database header
+                port=443)
 
 Only the transport changes: ``Record``/``RecordList``, lazy relational access
 and every model method keep working exactly as with the other connectors.

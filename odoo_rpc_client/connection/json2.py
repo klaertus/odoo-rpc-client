@@ -18,27 +18,27 @@ Only the *transport* layer changes: every model call still funnels through
 ORM layer on top of it (``Record``/``RecordList``, lazy relational access,
 etc.) keeps working unchanged.
 
-Usage::
+Usage -- exactly the same ``Client`` arguments as the other connectors, just
+pass the **API key as** ``pwd`` and select the ``json-2`` protocol::
 
     from odoo_rpc_client import Client
     cl = Client(
         host='mycompany.odoo.com',
-        dbname='mycompany',
-        # `user`/`pwd` only satisfy Client's login guard; the real
-        # authentication is the API key passed below.
-        user='apikey', pwd='<api-key>',
+        dbname='mycompany',       # sent as the X-Odoo-Database header
+        user='automation',        # only satisfies Client's login guard (ignored)
+        pwd='<api-key>',          # <-- the API key (bearer token)
         protocol='json-2',
         port=443,
-        api_key='<api-key>',
-        database='mycompany',   # sent as the X-Odoo-Database header
     )
     cl['res.partner'].search_records([('is_company', '=', True)])
 
-Extra connector arguments (passed as keyword arguments to ``Client``):
+The API key and database are taken from the ``pwd`` and ``dbname`` arguments
+that the ORM already passes to ``execute_kw`` / ``login`` on every call, so no
+special extra arguments are needed. They may still be overridden explicitly:
 
-    - ``api_key`` (**required**): the Odoo API key used as bearer token.
-    - ``database``: value for the ``X-Odoo-Database`` header. Optional when
-      the API key is bound to a single database.
+    - ``api_key``: Odoo API key (bearer token). Defaults to the Client ``pwd``.
+    - ``database``: value for the ``X-Odoo-Database`` header. Defaults to the
+      Client ``dbname``.
     - ``base_url``: full base url override (e.g. ``https://host/odoo``).
       When omitted it is built from host/port/ssl.
     - ``ssl``: whether to use https (default: ``True``).
@@ -95,7 +95,7 @@ class JSON2Requester(object):
         ``/json/2`` endpoint. Shared by all service proxies of a connection.
     """
 
-    def __init__(self, base_url, api_key, database=None, ssl_verify=True,
+    def __init__(self, base_url, api_key=None, database=None, ssl_verify=True,
                  timeout=DEFAULT_TIMEOUT):
         self._base_url = base_url.rstrip('/')
         self._api_key = api_key
@@ -103,8 +103,22 @@ class JSON2Requester(object):
         self._ssl_verify = ssl_verify
         self._timeout = timeout
 
+    def set_credentials(self, database=None, api_key=None):
+        """ Refresh the API key / database from the ``dbname`` and ``pwd``
+            arguments the ORM passes on every ``execute_kw`` / ``login`` call.
+            Only non-empty values overwrite the current ones.
+        """
+        if api_key:
+            self._api_key = api_key
+        if database:
+            self._database = database
+
     @property
     def headers(self):
+        if not self._api_key:
+            raise JSON2Error(
+                "No API key available for JSON-2 authentication. Pass it as "
+                "the Client 'pwd' argument (or as the 'api_key' argument).")
         headers = {
             'Authorization': 'bearer %s' % self._api_key,
             'Content-Type': 'application/json',
@@ -113,6 +127,10 @@ class JSON2Requester(object):
         if self._database:
             headers['X-Odoo-Database'] = self._database
         return headers
+
+    @property
+    def api_key(self):
+        return self._api_key
 
     @staticmethod
     def _build_body(method, args, kwargs):
@@ -186,7 +204,8 @@ class JSON2ObjectProxy(object):
         self._requester = requester
 
     def execute_kw(self, dbname, uid, pwd, model, method, args, kwargs):
-        # dbname/uid/pwd are ignored: authentication is done via the API key.
+        # The API key comes in as ``pwd`` and the database as ``dbname``.
+        self._requester.set_credentials(dbname, pwd)
         result = self._requester.call(model, method, args, kwargs)
 
         # ``create`` over classic RPC returns a scalar id; JSON-2 may return a
@@ -197,6 +216,7 @@ class JSON2ObjectProxy(object):
         return result
 
     def execute(self, dbname, uid, pwd, model, method, *args):
+        self._requester.set_credentials(dbname, pwd)
         return self._requester.call(model, method, list(args), {})
 
     def exec_workflow(self, *args, **kwargs):  # pragma: no cover
@@ -214,9 +234,13 @@ class JSON2CommonProxy(object):
         self._uid = uid
 
     def login(self, dbname, user, password):
+        # ``password`` is the API key; capture it (and the database) so the
+        # first authenticated request has them available.
+        self._requester.set_credentials(dbname, password)
         return self._uid
 
     def authenticate(self, dbname, user, password, user_agent_env=None):
+        self._requester.set_credentials(dbname, password)
         return self._uid
 
     def version(self):  # pragma: no cover
@@ -234,23 +258,26 @@ class JSON2DbProxy(object):
             return self._server_version
         # Detect the server version from the 'base' module. This goes straight
         # through the requester (not the ORM) to avoid recursing into the
-        # version-gated ORM code paths.
-        try:
-            res = self._requester.call(
-                'ir.module.module', 'search_read', (),
-                {'domain': [('name', '=', 'base')],
-                 'fields': ['latest_version'],
-                 'limit': 1})
-            if res:
-                version = res[0].get('latest_version')
-                if version:
-                    self._server_version = version
-                    return version
-        except Exception as exc:  # pragma: no cover
-            logger.warning("Could not detect Odoo server version: %s", exc)
-        # Fall back to a modern default so version-gated features stay enabled.
-        self._server_version = '17.0'
-        return self._server_version
+        # version-gated ORM code paths. It needs the API key, which is captured
+        # from the first ``login`` / ``execute_kw`` call.
+        if self._requester.api_key:
+            try:
+                res = self._requester.call(
+                    'ir.module.module', 'search_read', (),
+                    {'domain': [('name', '=', 'base')],
+                     'fields': ['latest_version'],
+                     'limit': 1})
+                if res:
+                    version = res[0].get('latest_version')
+                    if version:
+                        self._server_version = version
+                        return version
+            except Exception as exc:  # pragma: no cover
+                logger.warning("Could not detect Odoo server version: %s", exc)
+        # No key yet (or detection failed): report a modern default so that all
+        # version-gated features stay enabled. Not cached, so a later call can
+        # still auto-detect once the key is available.
+        return '17.0'
 
 
 class ConnectorJSON2(ConnectorBase):
@@ -279,13 +306,12 @@ class ConnectorJSON2(ConnectorBase):
 
     def get_requester(self):
         if self._requester is None:
-            api_key = self.extra_args.get('api_key')
-            if not api_key:
-                raise JSON2Error(
-                    "The 'json-2' connector requires an 'api_key' argument.")
+            # api_key / database default to the Client 'pwd' / 'dbname', which
+            # the ORM feeds in on every execute_kw / login call. They may also
+            # be provided explicitly as connector arguments.
             self._requester = JSON2Requester(
                 self._get_base_url(),
-                api_key,
+                api_key=self.extra_args.get('api_key'),
                 database=self.extra_args.get('database'),
                 ssl_verify=self.extra_args.get('ssl_verify', True),
                 timeout=self.timeout)

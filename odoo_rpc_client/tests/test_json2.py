@@ -84,10 +84,11 @@ class TestJSON2Connector(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+        # Same Client arguments as any other connector: the API key is passed
+        # as `pwd` and the database as `dbname` (no special extra arguments).
         self.client = Client(
             host='example.odoo.com', dbname='exampledb',
-            user='apikey', pwd='THEKEY', protocol='json-2', port=443,
-            api_key='THEKEY', database='exampledb')
+            user='apikey', pwd='THEKEY', protocol='json-2', port=443)
 
     def _body(self, endpoint):
         for url, body, _ in self.calls:
